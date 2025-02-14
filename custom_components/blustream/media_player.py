@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import time
 
 from pyblustream.listener import SourceChangeListener
 from pyblustream.matrix import Matrix
@@ -50,8 +52,15 @@ async def async_setup_entry(
 
     # Setup the individual output entites
     for output_id, output_name in matrix.outputs_by_id.items():
-        _LOGGER.debug("Setting up output entity for output_id: %s, %s", output_id, output_name)
+        _LOGGER.debug(
+            "Setting up output entity for output_id: %s, %s", output_id, output_name
+        )
         matrix_output = MatrixOutput(output_id, output_name, matrix)
+        config_entry.async_create_background_task(
+            hass,
+            matrix_output._run_media_image_url_update_loop(),
+            "media_image_url_update_loop",
+        )
         my_listener.add_matrix_output_entity(output_id, matrix_output)
         outputs.append(matrix_output)
 
@@ -59,6 +68,7 @@ async def async_setup_entry(
     _LOGGER.info("Refreshing status after setup")
     matrix.update_status()
     async_add_entities(outputs)
+    my_listener.power_changed("ON")
 
 
 class MyListener(SourceChangeListener):
@@ -191,6 +201,17 @@ class MatrixOutput(MediaPlayerEntity):
             sw_version=self._matrix.firmware_version,
             via_device=(DOMAIN, mac),
         )
+        self._attr_media_image_url = self.make_media_image_url()
+        self._attr_source = matrix.inputs_by_id[
+            matrix.get_initial_output_source_id(output_id)
+        ]
+
+    async def _run_media_image_url_update_loop(self):
+        while True:
+            self._attr_media_image_url = self.make_media_image_url()
+            if self.hass:
+                self.async_schedule_update_ha_state()
+            await asyncio.sleep(5)
 
     def set_state(self, state):
         """Set the power."""
@@ -206,8 +227,19 @@ class MatrixOutput(MediaPlayerEntity):
         """Select the source."""
         input_id = self._matrix.inputs_by_name.get(source)
         if input_id:
-            self._matrix.change_source(
-                output_id=self.output_id, input_id=input_id
-            )
+            self._matrix.change_source(output_id=self.output_id, input_id=input_id)
         else:
-            _LOGGER.error("Invalid input source: %s, valid sources %s", source, self._attr_source_list)
+            _LOGGER.error(
+                "Invalid input source: %s, valid sources %s",
+                source,
+                self._attr_source_list,
+            )
+
+    def make_media_image_url(self) -> str:
+        """Return the media image URL."""
+        return f"{self._matrix.get_output_image_url(self.output_id)}&time={int(time.time())}"
+
+    @property
+    def media_image_remotely_accessible(self) -> str:
+        """Return the media image remotely accessible parameter."""
+        return True

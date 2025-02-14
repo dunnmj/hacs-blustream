@@ -7,6 +7,7 @@ import logging
 
 from pyblustream.listener import LoggingListener, TurningOnListener
 from pyblustream.matrix import Matrix
+from pyblustream.acm import ACM
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PORT, Platform
@@ -31,11 +32,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # turn_on_listener = False
     turn_on_listener = entry.data[CONF_POWER_ON_APP_SOURCE_CHANGE]
 
-    matrix = Matrix(hostname, port)
+    matrix = ACM(hostname, port)
     try:
         matrix.register_listener(LoggingListener())
         if turn_on_listener:
-            _LOGGER.info("Registering listener to turn on matrix when app source is changed")
+            _LOGGER.info(
+                "Registering listener to turn on matrix when app source is changed"
+            )
             matrix.register_listener(TurningOnListener(matrix))
         async with timeout(5.0):
             await matrix.async_connect()
