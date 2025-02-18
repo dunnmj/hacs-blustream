@@ -34,7 +34,7 @@ async def async_setup_entry(
     """Add media_player for passed config_entry in HA."""
     # The hub is loaded from the associated hass.data entry that was created in the
     # __init__.async_setup_entry function
-    matrix: Matrix = hass.data[DOMAIN][config_entry.entry_id]
+    matrix: Matrix = config_entry.runtime_data
 
     name = config_entry.data[CONF_NAME]
 

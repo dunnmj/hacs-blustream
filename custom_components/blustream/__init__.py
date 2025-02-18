@@ -17,7 +17,7 @@ from .const import CONF_POWER_ON_APP_SOURCE_CHANGE, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.MEDIA_PLAYER]
+PLATFORMS: list[Platform] = [Platform.MEDIA_PLAYER, Platform.CAMERA]
 
 # TODO Create ConfigEntry type alias with API object
 # TODO Rename type alias and update all entry annotations
@@ -42,7 +42,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             matrix.register_listener(TurningOnListener(matrix))
         async with timeout(5.0):
             await matrix.async_connect()
-        hass.data.setdefault(DOMAIN, {})[entry.entry_id] = matrix
+        entry.runtime_data = matrix
 
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
