@@ -17,5 +17,17 @@
     "abort": {
       "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
     }
+  },
+  "services": {
+    "send_guest_command": {
+      "name": "Send Guest Command",
+      "description": "Sends a command string to the serial port of the device that the selected media player entity is part of.",
+      "fields": {
+        "command_string_bytes": {
+          "description": "Command string to send as a list of decimal encoded bytes",
+          "name": "Command"
+        }
+      }
+    }
   }
 }

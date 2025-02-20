@@ -8,6 +8,7 @@ import time
 
 from pyblustream.listener import SourceChangeListener
 from pyblustream.matrix import Matrix
+import voluptuous as vol
 
 from homeassistant.components.media_player import (
     MediaPlayerDeviceClass,
@@ -18,12 +19,25 @@ from homeassistant.components.media_player import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_platform
+import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.device_registry import DeviceInfo, format_mac
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
 
+SERVICE_NAME = "send_guest_command"
+
 _LOGGER = logging.getLogger(__name__)
+
+
+async def send_guest_command(entity, service_call):
+    """Send a serial guest command through the ACM."""
+    command_bytes = service_call.data["command_string_bytes"]
+    command = bytes(command_bytes)
+    if b"CLOSEACMGUEST" in command:
+        raise ValueError("Cannot exit guest mode manually")
+    entity.async_send_guest_command(command)
 
 
 async def async_setup_entry(
@@ -32,6 +46,17 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Add media_player for passed config_entry in HA."""
+    platform = entity_platform.async_get_current_platform()
+    platform.async_register_entity_service(
+        SERVICE_NAME,
+        {
+            vol.Required("command_string_bytes"): vol.All(
+                cv.ensure_list,
+                [cv.byte],
+            ),
+        },
+        send_guest_command,
+    )
     # The hub is loaded from the associated hass.data entry that was created in the
     # __init__.async_setup_entry function
     matrix: Matrix = config_entry.runtime_data
@@ -243,3 +268,7 @@ class MatrixOutput(MediaPlayerEntity):
     def media_image_remotely_accessible(self) -> str:
         """Return the media image remotely accessible parameter."""
         return True
+
+    def async_send_guest_command(self, command):
+        """Send a guest command to the media player."""
+        self._matrix.send_guest_command(False, self.output_id, command)
