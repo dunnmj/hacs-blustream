@@ -19,8 +19,11 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.httpx_client import get_async_client
 
 from .const import DOMAIN
+from .guest_command import register_guest_command_service
 
 _LOGGER = logging.getLogger(__name__)
+
+SERVICE_NAME = "send_input_guest_command"
 
 
 async def async_setup_entry(
@@ -28,7 +31,8 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Add media_player for passed config_entry in HA."""
+    """Add camera for input for passed config_entry in HA."""
+    register_guest_command_service(SERVICE_NAME)
     # The hub is loaded from the associated hass.data entry that was created in the
     # __init__.async_setup_entry function
     matrix: Matrix = config_entry.runtime_data
@@ -67,6 +71,7 @@ class MatrixInputCam(Camera):
 
     def __init__(self, input_id, input_name, matrix) -> None:
         """Init."""
+        super().__init__()
         self.input_id = input_id
         self._matrix: Matrix = matrix
 
@@ -137,3 +142,7 @@ class MatrixInputCam(Camera):
         return (
             f"{self._matrix.get_input_image_url(self.input_id)}&time={int(time.time())}"
         )
+
+    def async_send_guest_command(self, command):
+        """Send a guest command to the camera."""
+        self._matrix.send_guest_command(True, self.input_id, command)

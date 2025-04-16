@@ -25,19 +25,11 @@ from homeassistant.helpers.device_registry import DeviceInfo, format_mac
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
-
-SERVICE_NAME = "send_guest_command"
+from .guest_command import register_guest_command_service
 
 _LOGGER = logging.getLogger(__name__)
 
-
-async def send_guest_command(entity, service_call):
-    """Send a serial guest command through the ACM."""
-    command_bytes = service_call.data["command_string_bytes"]
-    command = bytes(command_bytes)
-    if b"CLOSEACMGUEST" in command:
-        raise ValueError("Cannot exit guest mode manually")
-    entity.async_send_guest_command(command)
+SERVICE_NAME = "send_output_guest_command"
 
 
 async def async_setup_entry(
@@ -46,17 +38,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Add media_player for passed config_entry in HA."""
-    platform = entity_platform.async_get_current_platform()
-    platform.async_register_entity_service(
-        SERVICE_NAME,
-        {
-            vol.Required("command_string_bytes"): vol.All(
-                cv.ensure_list,
-                [cv.byte],
-            ),
-        },
-        send_guest_command,
-    )
+    register_guest_command_service(SERVICE_NAME)
     # The hub is loaded from the associated hass.data entry that was created in the
     # __init__.async_setup_entry function
     matrix: Matrix = config_entry.runtime_data

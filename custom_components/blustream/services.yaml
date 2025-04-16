@@ -1,6 +1,6 @@
 
 # Service ID
-send_guest_command:
+send_output_guest_command:
   # If the service action accepts entity IDs, target allows the user to specify
   # entities by entity, device, or area. If `target` is specified, `entity_id`
   # should not be  defined in the `fields` map. By default it shows only targets
@@ -23,7 +23,26 @@ send_guest_command:
       # (default = false)
       advanced: false
       # Example value that can be passed for this field
-      example: "- 2\n- 80 #P\n- 79 #O\n- 78 #N\n- 3"
+      example: "- 2 #Start Char\n- 80 #P\n- 79 #O\n- 78 #N\n- 3 #End Char\n- 13 #Return Char\n- 10 #New Line\n- 2 #Start Char\n- 80 #P\n- 79 #O\n- 78 #N\n- 3 #End Char"
+      # The default field value
+      selector:
+        object:
+send_input_guest_command:
+  target:
+    entity:
+      domain: camera
+      integration: blustream
+  # Different fields that your service action accepts
+  fields:
+    # Key of the field
+    command_string_bytes:
+      # Whether or not field is required (default = false)
+      required: true
+      # Advanced fields are only shown when the advanced mode is enabled for the user
+      # (default = false)
+      advanced: false
+      # Example value that can be passed for this field
+      example: "- 2 #Start Char\n- 80 #P\n- 79 #O\n- 78 #N\n- 3 #End Char\n- 13 #Return Char\n- 10 #New Line\n- 2 #Start Char\n- 80 #P\n- 79 #O\n- 78 #N\n- 3 #End Char"
       # The default field value
       selector:
         object:
