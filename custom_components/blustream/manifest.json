@@ -1,7 +1,7 @@
 {
   "domain": "blustream",
-  "name": "Blustream Matrix",
-  "codeowners": ["@foxy82"],
+  "name": "Blustream",
+  "codeowners": ["@foxy827"],
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/designer-living/hacs-blustream",

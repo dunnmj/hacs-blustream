@@ -7,6 +7,8 @@ import logging
 from typing import Any
 
 from pyblustream.matrix import Matrix
+from pyblustream.acm import ACM
+
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
@@ -23,7 +25,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_NAME, default="Matrix"): str,
         vol.Required(CONF_HOST): str,
         vol.Required(CONF_PORT, default=23): int,
-        vol.Required(CONF_POWER_ON_APP_SOURCE_CHANGE, default=False): bool
+        vol.Required(CONF_POWER_ON_APP_SOURCE_CHANGE, default=False): bool,
     }
 )
 
@@ -34,7 +36,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     Data has the keys from STEP_USER_DATA_SCHEMA with values provided by the user.
     """
 
-    matrix = Matrix(hostname=data[CONF_HOST], port=data[CONF_PORT])
+    matrix = ACM(hostname=data[CONF_HOST], port=data[CONF_PORT])
 
     try:
         async with timeout(5.0):
@@ -48,7 +50,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     return {"title": data[CONF_NAME]}
 
 
-class ConfigFlow(ConfigFlow, domain=DOMAIN):
+class BlustreamConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Blustream Matrix."""
 
     VERSION = 1

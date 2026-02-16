@@ -1,21 +1,33 @@
 {
-    "config": {
-        "abort": {
-            "already_configured": "Device is already configured"
-        },
-        "error": {
-            "cannot_connect": "Failed to connect",
-            "unknown": "Unexpected error"
-        },
-        "step": {
-            "user": {
-                "data": {
-                    "host": "Host",
-                    "name": "Name",
-                    "port": "Port",
-                    "power_on_app_source_change": "Power on Matrix if source is changed on phone app?"
-                }
-            }
+  "config": {
+    "abort": {
+      "already_configured": "Device is already configured"
+    },
+    "error": {
+      "cannot_connect": "Failed to connect",
+      "unknown": "Unexpected error"
+    },
+    "step": {
+      "user": {
+        "data": {
+          "host": "Host",
+          "name": "Name",
+          "port": "Port",
+          "power_on_app_source_change": "Power on Matrix if source is changed on phone app?"
         }
+      }
     }
+  },
+  "services": {
+    "send_guest_command": {
+      "name": "Send Guest Command",
+      "description": "Sends a command string to the serial port of the device that the selected media player entity is part of.",
+      "fields": {
+        "command_string_bytes": {
+          "description": "Command string to send as a list of decimal encoded bytes",
+          "name": "Command"
+        }
+      }
+    }
+  }
 }

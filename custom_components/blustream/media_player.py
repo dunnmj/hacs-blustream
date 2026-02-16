@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import time
 
 from pyblustream.listener import SourceChangeListener
 from pyblustream.matrix import Matrix
+import voluptuous as vol
 
 from homeassistant.components.media_player import (
     MediaPlayerDeviceClass,
@@ -16,12 +19,17 @@ from homeassistant.components.media_player import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_platform
+import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.device_registry import DeviceInfo, format_mac
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
+from .guest_command import register_guest_command_service
 
 _LOGGER = logging.getLogger(__name__)
+
+SERVICE_NAME = "send_output_guest_command"
 
 
 async def async_setup_entry(
@@ -30,9 +38,10 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Add media_player for passed config_entry in HA."""
+    register_guest_command_service(SERVICE_NAME)
     # The hub is loaded from the associated hass.data entry that was created in the
     # __init__.async_setup_entry function
-    matrix: Matrix = hass.data[DOMAIN][config_entry.entry_id]
+    matrix: Matrix = config_entry.runtime_data
 
     name = config_entry.data[CONF_NAME]
 
@@ -50,8 +59,15 @@ async def async_setup_entry(
 
     # Setup the individual output entites
     for output_id, output_name in matrix.outputs_by_id.items():
-        _LOGGER.debug("Setting up output entity for output_id: %s, %s", output_id, output_name)
+        _LOGGER.debug(
+            "Setting up output entity for output_id: %s, %s", output_id, output_name
+        )
         matrix_output = MatrixOutput(output_id, output_name, matrix)
+        config_entry.async_create_background_task(
+            hass,
+            matrix_output._run_media_image_url_update_loop(),
+            "media_image_url_update_loop",
+        )
         my_listener.add_matrix_output_entity(output_id, matrix_output)
         outputs.append(matrix_output)
 
@@ -59,6 +75,7 @@ async def async_setup_entry(
     _LOGGER.info("Refreshing status after setup")
     matrix.update_status()
     async_add_entities(outputs)
+    my_listener.power_changed("ON")
 
 
 class MyListener(SourceChangeListener):
@@ -191,6 +208,17 @@ class MatrixOutput(MediaPlayerEntity):
             sw_version=self._matrix.firmware_version,
             via_device=(DOMAIN, mac),
         )
+        self._attr_media_image_url = self.make_media_image_url()
+        self._attr_source = matrix.inputs_by_id[
+            matrix.get_initial_output_source_id(output_id)
+        ]
+
+    async def _run_media_image_url_update_loop(self):
+        while True:
+            self._attr_media_image_url = self.make_media_image_url()
+            if self.hass:
+                self.async_schedule_update_ha_state()
+            await asyncio.sleep(5)
 
     def set_state(self, state):
         """Set the power."""
@@ -206,8 +234,23 @@ class MatrixOutput(MediaPlayerEntity):
         """Select the source."""
         input_id = self._matrix.inputs_by_name.get(source)
         if input_id:
-            self._matrix.change_source(
-                output_id=self.output_id, input_id=input_id
-            )
+            self._matrix.change_source(output_id=self.output_id, input_id=input_id)
         else:
-            _LOGGER.error("Invalid input source: %s, valid sources %s", source, self._attr_source_list)
+            _LOGGER.error(
+                "Invalid input source: %s, valid sources %s",
+                source,
+                self._attr_source_list,
+            )
+
+    def make_media_image_url(self) -> str:
+        """Return the media image URL."""
+        return f"{self._matrix.get_output_image_url(self.output_id)}&time={int(time.time())}"
+
+    @property
+    def media_image_remotely_accessible(self) -> str:
+        """Return the media image remotely accessible parameter."""
+        return True
+
+    def async_send_guest_command(self, command):
+        """Send a guest command to the media player."""
+        self._matrix.send_guest_command(False, self.output_id, command)
