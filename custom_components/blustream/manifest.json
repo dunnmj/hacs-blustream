@@ -4,12 +4,12 @@
   "codeowners": ["@foxy827"],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "https://github.com/designer-living/hacs-blustream",
-  "issue_tracker": "https://github.com/designer-living/hacs-blustream/issues",
-  "homekit": {},
+  "documentation": "https://github.com/dunnmj/hacs-blustream",
+  "integration_type": "device",
+  "issue_tracker": "https://github.com/dunnmj/hacs-blustream/issues",
   "iot_class": "local_push",
-  "requirements": ["pyblustream==0.21"],
-  "ssdp": [],
-  "version": "0.3",
-  "zeroconf": []
+  "requirements": [
+    "pyblustream @ git+https://github.com/designer-living/pyblustream.git@dea16cf7a15941af14298c1f84011fa334fbf3d8"
+  ],
+  "version": "0.3.1"
 }

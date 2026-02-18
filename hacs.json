@@ -1,3 +1,5 @@
 {
-  "name": "HACS Blustream"
+  "name": "Blustream",
+  "render_readme": true,
+  "homeassistant": "2024.1.0"
 }
